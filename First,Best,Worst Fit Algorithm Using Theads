@@ -1,1 +1,157 @@
-hi
+#include <stdio.h>
+#include <limits.h>
+#include<pthread.h>
+#include<sys/types.h>
+#include<unistd.h>
+// 5 100 500 200 300 600 4 212 417 112 426
+// author @lokeshbhargava_
+struct data{
+    int n,m;
+    int arr[100],mem_arr[100];
+    int marked[100],markedto[100];
+}s1;
+void *firstfit(void* st1)
+{
+    struct data *s2=(struct data *)st1;
+    for (int i = 0; i < s2->m; i++)
+        s2->marked[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+        s2->markedto[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+    {
+        for (int j = 0; j < s2->m; j++)
+        {
+            if (s2->arr[i] <= s2->mem_arr[j] && s2->marked[j] == -1)
+            {
+                s2->marked[j] = 1;
+                s2->markedto[i] = j + 1;
+                break;
+            }
+        }
+    }
+    for (int i = 0; i < s2->n; i++)
+    {
+        if (s2->markedto[i] != -1)
+        {
+            printf("Process %d allocated to block %d\n", i + 1, s2->markedto[i]);
+        }
+        else
+        {
+            printf("Process %d unallocated !\n", i + 1);
+        }
+    }
+}
+void* bestfit(void* st1)
+{
+    struct data *s2=(struct data *)st1;
+    for (int i = 0; i < s2->m; i++)
+        s2->marked[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+        s2->markedto[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+    {
+        int curr_loss = INT_MAX;
+        int curr_index;
+        for (int j = 0; j < s2->m; j++)
+        {
+            if (s2->arr[i] <= s2->mem_arr[j] && s2->marked[j] == -1)
+            {
+                if (s2->mem_arr[j] - s2->arr[i] < curr_loss)
+                {
+                    curr_loss = s2->mem_arr[j] - s2->arr[i];
+                    curr_index = j;
+                }
+            }
+            // finds best fit
+        }
+        // allocate current process to best fit index which is curr_index
+        if (curr_loss != INT_MAX)
+        {
+            s2->markedto[i] = curr_index + 1;
+            s2->marked[curr_index] = 1;
+        }
+    }
+    for (int i = 0; i < s2->n; i++)
+    {
+        if (s2->markedto[i] != -1)
+        {
+            printf("Process %d allocated to block %d\n", i + 1, s2->markedto[i]);
+        }
+        else
+        {
+            printf("Process %d unallocated !\n", i + 1);
+        }
+    }
+}
+void* worstfit(void* st1)
+{
+    struct data *s2=(struct data *)st1;
+    for (int i = 0; i < s2->m; i++)
+        s2->marked[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+        s2->markedto[i] = -1;
+    for (int i = 0; i < s2->n; i++)
+    {
+        int curr_loss = INT_MIN;
+        int curr_index;
+        for (int j = 0; j < s2->m; j++)
+        {
+            if (s2->arr[i] <= s2->mem_arr[j] && s2->marked[j] == -1)
+            {
+                if (s2->mem_arr[j] - s2->arr[i] > curr_loss)
+                {
+                    curr_loss = s2->mem_arr[j] - s2->arr[i];
+                    curr_index = j;
+                }
+            }
+            // finds worst fit
+        }
+        // allocate current process to best fit index which is curr_index
+        if (curr_loss != INT_MIN)
+        {
+            s2->markedto[i] = curr_index + 1;
+            s2->marked[curr_index] = 1;
+        }
+    }
+    for (int i = 0; i < s2->n; i++)
+    {
+        if (s2->markedto[i] != -1)
+        {
+            printf("Process %d allocated to block %d\n", i + 1, s2->markedto[i]);
+        }
+        else
+        {
+            printf("Process %d unallocated !\n", i + 1);
+        }
+    }
+}
+int main()
+{
+    printf("Enter number of memory blocks : \n");
+    scanf("%d", &s1.m);
+    for (int i = 0; i < s1.m; i++)
+    {
+        printf("Enter memory of block %d : \n", i + 1);
+        scanf("%d", &s1.mem_arr[i]);
+    }
+    printf("Enter number of processes : \n");
+    scanf("%d", &s1.n);
+    for (int i = 0; i < s1.n; i++)
+    {
+        printf("Enter memory required by process %d : \n", i + 1);
+        scanf("%d", &s1.arr[i]);
+    }
+    printf("First fit : \n");
+    pthread_t t1,t2,t3;
+    pthread_create(&t1,NULL,(void *)firstfit,(void *)&s1);
+    pthread_join(t1,NULL);
+
+    printf("Best fit : \n");
+    pthread_create(&t2,NULL,(void *)bestfit,(void *)&s1);
+    pthread_join(t2,NULL);
+
+    printf("Worst fit : \n");
+    pthread_create(&t3,NULL,(void *)worstfit,(void *)&s1);
+    pthread_join(t3,NULL);
+    return 0;
+}
